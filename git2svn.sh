@@ -1,7 +1,7 @@
 #!/bin/bash
 BASE_DIR=`pwd`
-GIT_DIR="/Users/gc/Temp/git_repo"
-SVN_DIR="/Users/gc/Temp/svn_repo"
+GIT_DIR=$1
+SVN_DIR=$2
 
 # The SVN_AUTH variable can be used in case you need credentials to commit
 #SVN_AUTH="--username guilherme.chapiewski@gmail.com --password XPTO"
