@@ -1,3 +1,5 @@
+#ex$ git2svn.sh {gitDir} {svnDir}
+
 #!/bin/bash
 BASE_DIR=`pwd`
 #GIT_DIR="/Users/gc/Temp/git_repo"
@@ -43,13 +45,14 @@ function svn_checkin {
 function clean_up {
 	echo "... clean_up";
 	cd $SVN_DIR && svn $SVN_AUTH revert . -R && svn $SVN_AUTH cleanup . --remove-unversioned && cd $BASE_DIR;
-	cd $GIT_DIR && git checkout $GIT_BRANCH_NAME && cd $BASE_DIR;
+	cd $GIT_DIR && git checkout $GIT_BRANCH_NAME -f && cd $BASE_DIR;
 	echo "... clean_up finished!";
 }
 
 function svn_last_git_commit_hash {
 	echo "... check last git commit hash";
 	cd $SVN_DIR && svn $SVN_AUTH update && cd $BASE_DIR;
+	lastGitCommitHash='';
 	lastGitCommitHash=`cd ${SVN_DIR} && svn ${SVN_AUTH} log --xml -l 1 | grep ${GIT_COMMIT_HASH} | sed s/${GIT_COMMIT_HASH}//g | sed s/\<[/?]msg\>//g && cd ${BASE_DIR}`;
 	hasgLength=${#lastGitCommitHash};
 	if [[ "$hasgLength" != '40' ]]; then
@@ -59,46 +62,77 @@ function svn_last_git_commit_hash {
 }
 
 function svn_commit {
-	echo "... committing -> [$author]: $msg";
-	cd $SVN_DIR && svn $SVN_AUTH commit -m "[$author]: $msg" && cd $BASE_DIR;
-	echo '... committed!'
+	echo "... committing -> $commitDate [$author]: $msg";
+	local result=`cd $SVN_DIR && svn $SVN_AUTH commit -m "$commitDate [$author]: $msg" 2>&1 && cd $BASE_DIR`;
+	if [[ "$result" == *"svn: E"* ]];then
+		echo "$result"$'\n';
+		cntCommitError=$(($cntCommitError+1));
+		echo "... committing ERROR !!!!!!!!!!";
+	else
+		cntCommitError=0;
+		echo '... committed!'
+	fi 
 }
 
-# STEP 1. clean
-clean_up;
+# STEP 1. start
+cntCommitError=0;
 
-# STEP 2. check last gitCommitHash on svn
-svn_last_git_commit_hash;
-if [[ "$lastGitCommitHash" != '' ]]; then
-	revListQuery="${lastGitCommitHash}..HEAD";
-else
-	revListQuery="--all";
-fi
+while [ true ]; do
+	# STEP 2. clean
+	clean_up;
 
-# STEP 3. commit in looping
-for commit in `cd $GIT_DIR && git rev-list $GIT_BRANCH_NAME $revListQuery --reverse && cd $BASE_DIR`; do 
-	echo "Committing $commit...";
-	author=`cd ${GIT_DIR} && git log -n 1 --pretty=format:%an ${commit} && cd ${BASE_DIR}`;
-	msg=`cd ${GIT_DIR} && git log -n 1 --pretty=format:%s ${commit} && cd ${BASE_DIR}`;
-	# add msg (GitCommitHash:{commit})
-	msg="${msg}"$'\n'$'\n'"${GIT_COMMIT_HASH}${commit}";
-	
-	# Checkout the current commit on git
-	echo '... checking out commit on Git'
-	cd $GIT_DIR && git checkout $commit && cd $BASE_DIR;
-	
-	# Delete everything from SVN and copy new files from Git
-	echo '... copying files'
-	rm -rf $SVN_DIR/*;
-	cp -prf $GIT_DIR/* $SVN_DIR/;
-	
-	# Remove Git specific files from SVN
-	for ignorefile in `find ${SVN_DIR} | grep .git | grep .gitignore`;
-	do
-		rm -rf $ignorefile;
+	# STEP 3. check last gitCommitHash on svn
+	svn_last_git_commit_hash;
+	if [[ "$lastGitCommitHash" != '' ]]; then
+		revListQuery="${lastGitCommitHash}..HEAD";
+	else
+		revListQuery="--all";
+	fi
+
+	# STEP 4. commit in looping
+	for commit in `cd $GIT_DIR && git rev-list $GIT_BRANCH_NAME $revListQuery --reverse && cd $BASE_DIR`; do 
+		echo "Committing $commit...";
+		author=`cd ${GIT_DIR} && git log -n 1 --pretty=format:%an ${commit} && cd ${BASE_DIR}`;
+		msg=`cd ${GIT_DIR} && git log -n 1 --pretty=format:%s ${commit} && cd ${BASE_DIR}`;
+		commitDate=`cd ${GIT_DIR} && git log -n 1 --date=format:"%Y/%m/%d %H:%M:%S" --pretty=format:%cd ${commit} && cd ${BASE_DIR}`;
+		# add msg (GitCommitHash:{commit})
+		msg="${msg}"$'\n'$'\n'"${GIT_COMMIT_HASH}${commit}";
+		
+		# Checkout the current commit on git
+		echo '... checking out commit on Git'
+		cd $GIT_DIR && git checkout $commit && cd $BASE_DIR;
+		
+		# Delete everything from SVN and copy new files from Git
+		echo '... copying files'
+		rm -rf $SVN_DIR/*;
+		cp -prf $GIT_DIR/* $SVN_DIR/;
+		
+		# Remove Git specific files from SVN
+		for ignorefile in `find ${SVN_DIR} | grep .git | grep .gitignore`;
+		do
+			rm -rf $ignorefile;
+		done
+		
+		# Add new files to SVN and commit
+		svn_checkin && svn_commit;
+
+		if [ $cntCommitError -gt 0 ]; then
+			break;
+		fi
 	done
-	
-	# Add new files to SVN and commit
-	svn_checkin && svn_commit;
-done
 
+	if [ $cntCommitError -lt 1 ]; then
+		# error 없이 완료
+		echo "... FIN ...";
+		break;
+	else
+		if [ $cntCommitError -lt 3 ]; then
+			# 실패 3회 까지 재시도
+			echo "... clean up & retry. cntCommitError : $cntCommitError";
+		else
+			# 실패 3회 초과로 인한 종료 처리
+			echo "... STOP LOOP! cntCommitError : $cntCommitError";
+			break;
+		fi
+	fi
+done
