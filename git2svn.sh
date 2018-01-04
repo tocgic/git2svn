@@ -85,7 +85,7 @@ while [ true ]; do
 	svn_last_git_commit_hash;
 
 	# STEP 4. commit in looping
-	for commit in `cd $GIT_DIR && git rev-list $GIT_BRANCH_NAME --all --reverse && cd $BASE_DIR`; do
+	for commit in `cd $GIT_DIR && git rev-list $GIT_BRANCH_NAME --all-match --reverse && cd $BASE_DIR`; do
 
 		# git rev-list $GIT_BRANCH_NAME ${lastGitCommitHash}..HEAD --reverse
 		# 사용시, 연결되지 않는 commithash 값이 나오는 경우가 있어, --all을 이용한 풀 조회후, skip 처리 하도록 변경함
