@@ -83,6 +83,7 @@ function svn_commit {
 
 # STEP 1. start
 cntCommitError=0;
+totalRetryCount=0;
 
 while [ true ]; do
 	# STEP 2. clean
@@ -140,14 +141,19 @@ while [ true ]; do
 		echo "==========================================================";
 		echo "... F I N - S U C C E S S";
 		echo "==========================================================";
+		echo "... totalRetryCount : ${totalRetryCount}";
+		echo "... date ["`date '+%Y-%m-%d %H:%M:%S'`"]";
 		exit;
 	else
 		if [ $cntCommitError -lt 3 ]; then
 			# 실패 3회 까지 재시도
 			echo "... clean up & retry. cntCommitError : $cntCommitError";
+			totalRetryCount=$(($totalRetryCount+1));
 		else
 			# 실패 3회 초과로 인한 종료 처리
 			echo "... STOP LOOP! cntCommitError : $cntCommitError";
+			echo "... totalRetryCount : ${totalRetryCount}";
+			echo "... date ["`date '+%Y-%m-%d %H:%M:%S'`"]";
 			exit;
 		fi
 	fi
