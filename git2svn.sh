@@ -100,6 +100,8 @@ while [ true ]; do
 		author=`cd ${GIT_DIR} && git log -n 1 --pretty=format:%an ${commit} && cd ${BASE_DIR}`;
 		msg=`cd ${GIT_DIR} && git log -n 1 --pretty=format:%s ${commit} && cd ${BASE_DIR}`;
 		commitDate=`cd ${GIT_DIR} && git log -n 1 --date=format:"%Y/%m/%d %H:%M:%S" --pretty=format:%cd ${commit} && cd ${BASE_DIR}`;
+		# remove [author] string in msg
+		msg=`echo ${msg} | sed s/"\[${author}\]"//g`;
 		# add msg (GitCommitHash:{commit})
 		msg="${msg}"$'\n'$'\n'"${GIT_COMMIT_HASH}${commit}";
 		
