@@ -69,13 +69,16 @@ function svn_commit {
 	echo "... committing -> $commitDate [$author]: $msg";
 	local result=`cd $SVN_DIR && svn $SVN_AUTH commit -m "$commitDate [$author]: $msg" 2>&1 && cd $BASE_DIR`;
 	if [[ "$result" == *"svn: E"* ]];then
-		echo "$result"$'\n';
+		echo $'\n'"... commit message:";
+		echo "$commitDate [$author]: $msg";
+		echo "... ERROR MESSAGE:"$'\n'"$result"$'\n';
 		cntCommitError=$(($cntCommitError+1));
 		echo "... committing ERROR !!!!!!!!!!";
 	else
 		cntCommitError=0;
-		echo '... committed!'
-	fi 
+		echo '... committed!';
+	fi
+	echo $'\n';
 }
 
 # STEP 1. start
@@ -137,7 +140,7 @@ while [ true ]; do
 		echo "==========================================================";
 		echo "... F I N - S U C C E S S";
 		echo "==========================================================";
-		break;
+		exit;
 	else
 		if [ $cntCommitError -lt 3 ]; then
 			# 실패 3회 까지 재시도
@@ -145,7 +148,7 @@ while [ true ]; do
 		else
 			# 실패 3회 초과로 인한 종료 처리
 			echo "... STOP LOOP! cntCommitError : $cntCommitError";
-			break;
+			exit;
 		fi
 	fi
 done
