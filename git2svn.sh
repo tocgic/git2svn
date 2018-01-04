@@ -69,13 +69,16 @@ function svn_commit {
 	echo "... committing -> $commitDate [$author]: $msg";
 	local result=`cd $SVN_DIR && svn $SVN_AUTH commit -m "$commitDate [$author]: $msg" 2>&1 && cd $BASE_DIR`;
 	if [[ "$result" == *"svn: E"* ]];then
-		echo "$result"$'\n';
+		echo $'\n'"... commit message:";
+		echo "$commitDate [$author]: $msg";
+		echo "... ERROR MESSAGE:"$'\n'"$result"$'\n';
 		cntCommitError=$(($cntCommitError+1));
 		echo "... committing ERROR !!!!!!!!!!";
 	else
 		cntCommitError=0;
-		echo '... committed!'
-	fi 
+		echo '... committed!';
+	fi
+	echo $'\n';
 }
 
 # STEP 1. start
