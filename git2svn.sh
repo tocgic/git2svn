@@ -137,7 +137,7 @@ while [ true ]; do
 		echo "==========================================================";
 		echo "... F I N - S U C C E S S";
 		echo "==========================================================";
-		break;
+		exit;
 	else
 		if [ $cntCommitError -lt 3 ]; then
 			# 실패 3회 까지 재시도
@@ -145,7 +145,7 @@ while [ true ]; do
 		else
 			# 실패 3회 초과로 인한 종료 처리
 			echo "... STOP LOOP! cntCommitError : $cntCommitError";
-			break;
+			exit;
 		fi
 	fi
 done
