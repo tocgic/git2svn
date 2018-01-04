@@ -1,6 +1,10 @@
-#ex$ git2svn.sh {gitDir} {svnDir}
-
 #!/bin/bash
+
+#ex$ git2svn.sh {gitDir} {svnDir}
+if [ "$#" -ne 2 ]; then
+	echo "usage\$ git2svn.sh {gitDir} {svnDir}" && exit;
+fi
+
 BASE_DIR=`pwd`
 #GIT_DIR="/Users/gc/Temp/git_repo"
 GIT_DIR=$1
@@ -130,7 +134,9 @@ while [ true ]; do
 
 	if [ $cntCommitError -lt 1 ]; then
 		# error 없이 완료
-		echo "... FIN ...";
+		echo "==========================================================";
+		echo "... F I N - S U C C E S S";
+		echo "==========================================================";
 		break;
 	else
 		if [ $cntCommitError -lt 3 ]; then
