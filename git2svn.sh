@@ -68,14 +68,15 @@ function svn_last_git_commit_hash {
 }
 
 function svn_commit {
-	echo "... committing -> $commitDate [$author]: $msg";
-	local result=`cd $SVN_DIR && svn $SVN_AUTH commit -m "$commitDate [$author]: $msg" 2>&1 && cd $BASE_DIR`;
+	local commitMessage="$commitDate [$author]: $msg";
+	echo "... committing -> "$commitMessage;
+	local result=`cd $SVN_DIR && svn $SVN_AUTH commit -m "$commitMessage" 2>&1 && cd $BASE_DIR`;
 	if [[ "$result" == *"svn: E"* ]];then
 		echo $'\n'"... commit message:";
-		echo "$commitDate [$author]: $msg";
 		echo "... ERROR MESSAGE:"$'\n'"$result"$'\n';
 		cntCommitError=$(($cntCommitError+1));
 		echo "... committing ERROR !!!!!!!!!!";
+		echo "... commit message :"$'\n'"$commitMessage"$'\n';
 	else
 		cntCommitError=0;
 		echo '... committed!';
