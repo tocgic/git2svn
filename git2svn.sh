@@ -17,6 +17,7 @@ SVN_AUTH=""
 
 GIT_COMMIT_HASH='GitCommitHash:'
 GIT_BRANCH_NAME='master'
+ALLOW_COMMIT_ERROR_COUNT=3
 
 function svn_checkin {
 	echo '... adding files'
@@ -145,7 +146,7 @@ while [ true ]; do
 		echo "... date ["`date '+%Y-%m-%d %H:%M:%S'`"]";
 		exit;
 	else
-		if [ $cntCommitError -lt 3 ]; then
+		if [ $cntCommitError -lt $ALLOW_COMMIT_ERROR_COUNT ]; then
 			# 실패 3회 까지 재시도
 			echo "... clean up & retry. cntCommitError : $cntCommitError";
 			totalRetryCount=$(($totalRetryCount+1));
