@@ -27,24 +27,25 @@ function svn_checkin {
 
 		if [ "$fstatus" == "?" ]; then
 			if [[ "$fname" == *@* ]]; then
-				svn add $fname@;
+				svn add "$fname"@;
 			else
-				svn add $fname;
+				svn add "$fname";
 			fi
 		fi
 		if [ "$fstatus" == "!" ]; then
 			if [[ "$fname" == *@* ]]; then
-				svn rm $fname@;
+				svn rm "$fname"@;
 			else
-				svn rm $fname;
+				svn rm "$fname";
 			fi
 		fi
 		if [ "$fstatus" == "~" ]; then
-			rm -rf $fname;
-			svn up $fname;
+			rm -rf "$fname";
+			svn up "$fname";
 		fi
 	done
 	echo '... finished adding files'
+	cd $SVN_DIR && svn $SVN_AUTH update && cd $BASE_DIR;
 }
 
 function clean_up {
