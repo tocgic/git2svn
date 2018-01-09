@@ -17,6 +17,7 @@ SVN_AUTH=""
 
 GIT_COMMIT_HASH='GitCommitHash:'
 GIT_BRANCH_NAME='master'
+ALLOW_COMMIT_ERROR_COUNT=3
 
 function svn_checkin {
 	echo '... adding files'
@@ -26,24 +27,25 @@ function svn_checkin {
 
 		if [ "$fstatus" == "?" ]; then
 			if [[ "$fname" == *@* ]]; then
-				svn add $fname@;
+				svn add "$fname"@;
 			else
-				svn add $fname;
+				svn add "$fname";
 			fi
 		fi
 		if [ "$fstatus" == "!" ]; then
 			if [[ "$fname" == *@* ]]; then
-				svn rm $fname@;
+				svn rm "$fname"@;
 			else
-				svn rm $fname;
+				svn rm "$fname";
 			fi
 		fi
 		if [ "$fstatus" == "~" ]; then
-			rm -rf $fname;
-			svn up $fname;
+			rm -rf "$fname";
+			svn up "$fname";
 		fi
 	done
 	echo '... finished adding files'
+	cd $SVN_DIR && svn $SVN_AUTH update && cd $BASE_DIR;
 }
 
 function clean_up {
@@ -66,14 +68,15 @@ function svn_last_git_commit_hash {
 }
 
 function svn_commit {
-	echo "... committing -> $commitDate [$author]: $msg";
-	local result=`cd $SVN_DIR && svn $SVN_AUTH commit -m "$commitDate [$author]: $msg" 2>&1 && cd $BASE_DIR`;
+	local commitMessage="$commitDate [$author]: $msg";
+	echo "... committing -> "$commitMessage;
+	local result=`cd $SVN_DIR && svn $SVN_AUTH commit -m "$commitMessage" 2>&1 && cd $BASE_DIR`;
 	if [[ "$result" == *"svn: E"* ]];then
 		echo $'\n'"... commit message:";
-		echo "$commitDate [$author]: $msg";
 		echo "... ERROR MESSAGE:"$'\n'"$result"$'\n';
 		cntCommitError=$(($cntCommitError+1));
 		echo "... committing ERROR !!!!!!!!!!";
+		echo "... commit message :"$'\n'"$commitMessage"$'\n';
 	else
 		cntCommitError=0;
 		echo '... committed!';
@@ -145,7 +148,7 @@ while [ true ]; do
 		echo "... date ["`date '+%Y-%m-%d %H:%M:%S'`"]";
 		exit;
 	else
-		if [ $cntCommitError -lt 3 ]; then
+		if [ $cntCommitError -lt $ALLOW_COMMIT_ERROR_COUNT ]; then
 			# 실패 3회 까지 재시도
 			echo "... clean up & retry. cntCommitError : $cntCommitError";
 			totalRetryCount=$(($totalRetryCount+1));
